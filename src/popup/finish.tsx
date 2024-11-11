@@ -5,6 +5,7 @@ import { AppContext } from "@/context/app-context"
 import { useContext } from "react"
 import { useNavigate } from "react-router-dom"
 
+
 function FinishPopup() {
   const navigate = useNavigate()
   const { treeData } = useContext(AppContext)
@@ -14,11 +15,20 @@ function FinishPopup() {
     const data = JSON.stringify(treeData, null, 2)
     const blob = new Blob([data], { type: "application/json" })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "pintree.json"
-    a.click()
-    URL.revokeObjectURL(url)
+    
+    // 使用 chrome.downloads API 来自定义下载地址
+    chrome.downloads.download({
+      url: url,
+      filename: "pintree.json", // 默认文件名
+      saveAs: true // 弹出保存对话框让用户选择保存位置
+    }, () => {
+      // 下载完成后释放 URL
+      URL.revokeObjectURL(url)
+      
+      if (chrome.runtime.lastError) {
+        console.error(chrome.runtime.lastError)
+      }
+    })
   }
 
   return (
