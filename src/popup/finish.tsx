@@ -2,32 +2,40 @@ import { Finish, Icon } from "@/components/icons"
 import { MainFooter } from "@/components/main-footer"
 import { Button } from "@/components/ui/button"
 import { AppContext } from "@/context/app-context"
-import { useContext } from "react"
-import { useNavigate } from "react-router-dom"
-
+import { useContext, useEffect } from "react"
 
 function FinishPopup() {
-  const navigate = useNavigate()
   const { treeData } = useContext(AppContext)
+
+  useEffect(() => {
+    // 创建监听器函数
+    const filenameListener = (downloadItem: chrome.downloads.DownloadItem, suggest: (suggestion?: chrome.downloads.DownloadFilenameSuggestion) => void) => {
+      if (downloadItem.url.startsWith('blob:')) {
+        suggest({
+          filename: 'pintree.json',
+          conflictAction: 'prompt'
+        })
+      }
+    }
+    // 添加监听器
+    chrome.downloads.onDeterminingFilename.addListener(filenameListener)
+    // 清理函数
+    return () => {
+      chrome.downloads.onDeterminingFilename.removeListener(filenameListener)
+    }
+  }, [])
 
   // 点击导出按钮后，将数据处理为 JSON 格式
   const onDownload = () => {
     const data = JSON.stringify(treeData, null, 2)
-    const blob = new Blob([data], { type: "application/json" })
+    const blob = new Blob([data], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
-    
-    // 使用 chrome.downloads API 来自定义下载地址
+
     chrome.downloads.download({
       url: url,
-      filename: "pintree.json", // 默认文件名
-      saveAs: true // 弹出保存对话框让用户选择保存位置
+      saveAs: true
     }, () => {
-      // 下载完成后释放 URL
       URL.revokeObjectURL(url)
-      
-      if (chrome.runtime.lastError) {
-        console.error(chrome.runtime.lastError)
-      }
     })
   }
 

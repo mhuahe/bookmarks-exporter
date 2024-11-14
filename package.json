@@ -39,7 +39,8 @@
     ],
     "permissions": [
       "bookmarks",
-      "downloads"
+      "downloads",
+      "downloads.shelf"
     ]
   }
 }
